@@ -1,0 +1,46 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+UseTab: Never
+AlignAfterOpenBracket: true
+
+AlwaysBreakTemplateDeclarations: Yes
+ColumnLimit: 100
+NamespaceIndentation: All
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignConsecutiveMacros: true
+AlignConsecutiveBitFields: true
+AllowShortBlocksOnASingleLine: Always
+AllowShortFunctionsOnASingleLine: All
+AllowShortLambdasOnASingleLine: All
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: false
+AlignArrayOfStructures: Left
+PointerAlignment: Left
+IncludeBlocks: Preserve
+SpacesBeforeTrailingComments: 1
+BreakBeforeBraces: Custom
+
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: true
+  BeforeElse: true
+  BeforeLambdaBody: true
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+  BeforeWhile: true
+
+AllowAllArgumentsOnNextLine: false
+BinPackArguments: false
+LambdaBodyIndentation: Signature
