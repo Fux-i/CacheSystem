@@ -1,4 +1,5 @@
 #include "BaseCache.cpp"
+#include "log.cpp"
 #include <cstddef>
 #include <memory>
 #include <unordered_map>
@@ -30,8 +31,9 @@ class LRUCache : public BaseCache<KeyType, ValueType>
 
   public:
     LRUCache(size_t capacity)
-        : capacity_(capacity), first_(std::make_shared<NodeType>()),
-          last_(std::make_shared<NodeType>())
+        : capacity_(capacity)
+        , first_(std::make_shared<NodeType>())
+        , last_(std::make_shared<NodeType>())
     {
         first_->next = last_;
         last_->prev  = first_;
@@ -44,9 +46,18 @@ class LRUCache : public BaseCache<KeyType, ValueType>
             node_ptr temp = map_[key];
             move_to_first(temp);
             result = temp->value;
+            log("[LRU get] get: ", key, " = ", result, '\n');
             return true;
         }
+        log("[LRU get] get failed: ", key, '\n');
         return false;
+    }
+
+    ValueType get(KeyType key) override
+    {
+        ValueType result{};
+        get(key, result);
+        return result;
     }
 
     void put(KeyType key, ValueType value) override
@@ -56,8 +67,10 @@ class LRUCache : public BaseCache<KeyType, ValueType>
             node_ptr node = map_[key];
             node->value   = value;
             move_to_first(node);
+            log("[LRU put] update: ", key, '=', value, '\n');
             return;
         }
+        log("[LRU put] new put: ", key, '=', value, '\n');
 
         if (node_count_ < capacity_)
             node_count_++;
@@ -67,6 +80,16 @@ class LRUCache : public BaseCache<KeyType, ValueType>
         auto node = std::make_shared<NodeType>(key, value);
         map_[key] = node;
         insert_first(node);
+    }
+
+    // 公开remove方法，供LRU-K等子类使用
+    void remove_by_key(KeyType key)
+    {
+        auto it = map_.find(key);
+        if (it != map_.end())
+        {
+            remove(it->second, true);
+        }
     }
 
   private:

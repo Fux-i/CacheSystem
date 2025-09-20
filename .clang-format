@@ -3,6 +3,13 @@ IndentWidth: 4
 UseTab: Never
 AlignAfterOpenBracket: true
 
+# 构造函数初始化列表格式化
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerIndentWidth: 4
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+# AllowAllConstructorInitializersOnNextLine: false
+# PackConstructorInitializers: Never
+
 AlwaysBreakTemplateDeclarations: Yes
 ColumnLimit: 100
 NamespaceIndentation: All
