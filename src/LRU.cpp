@@ -1,47 +1,55 @@
+#include "BaseCache.cpp"
+#include <cstddef>
 #include <memory>
 #include <unordered_map>
 
+template <typename KeyType, typename ValueType>
 struct Node
 {
-    int                   key;
-    int                   value;
-    std::weak_ptr<Node>   prev;
+    KeyType               key;
+    ValueType             value;
+    std::weak_ptr<Node>   prev; // 使用weak_ptr避免循环引用
     std::shared_ptr<Node> next;
 
-    Node(int key, int value) : key(key), value(value) {}
+    Node() = default;
+    Node(KeyType key, ValueType value) : key(key), value(value) {}
 };
 
-class LRUCache
+template <typename KeyType, typename ValueType>
+class LRUCache : public BaseCache<KeyType, ValueType>
 {
-    using node_ptr = std::shared_ptr<Node>;
+    using NodeType = Node<KeyType, ValueType>;
+    using node_ptr = std::shared_ptr<Node<KeyType, ValueType>>;
+    using node_map = std::unordered_map<KeyType, node_ptr>;
 
-    int                               capacity_;
-    int                               node_count_{};
-    node_ptr                          first_;
-    node_ptr                          last_;
-    std::unordered_map<int, node_ptr> map_;
+    size_t   capacity_;     // 最大容量
+    size_t   node_count_{}; // 当前节点数量
+    node_ptr first_;        // 虚拟头节点
+    node_ptr last_;         // 虚拟尾节点
+    node_map map_;          // 哈希表
 
   public:
-    LRUCache(int capacity) : capacity_(capacity)
+    LRUCache(size_t capacity)
+        : capacity_(capacity), first_(std::make_shared<NodeType>()),
+          last_(std::make_shared<NodeType>())
     {
-        first_       = std::make_shared<Node>(-1, -1);
-        last_        = std::make_shared<Node>(-1, -1);
         first_->next = last_;
         last_->prev  = first_;
     }
 
-    int get(int key)
+    bool get(KeyType key, ValueType& result) override
     {
         if (map_.find(key) != map_.end())
         {
             node_ptr temp = map_[key];
             move_to_first(temp);
-            return temp->value;
+            result = temp->value;
+            return true;
         }
-        return -1;
+        return false;
     }
 
-    void put(int key, int value)
+    void put(KeyType key, ValueType value) override
     {
         if (map_.find(key) != map_.end())
         {
@@ -56,7 +64,7 @@ class LRUCache
         else
             remove_last();
 
-        auto node = std::make_shared<Node>(key, value);
+        auto node = std::make_shared<NodeType>(key, value);
         map_[key] = node;
         insert_first(node);
     }

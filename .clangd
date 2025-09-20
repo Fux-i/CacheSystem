@@ -35,6 +35,7 @@ Diagnostics:
       - readability-isolate-declaration
       - readability-braces-around-statements
       - readability-identifier-length
+      - misc-non-private-member-variables-in-classes
   UnusedIncludes: Strict
 
 # 补全配置
