@@ -1,7 +1,8 @@
 #include "BaseCache.cpp"
 #include "log.cpp"
-#include <cstddef>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <unordered_map>
 
 template <typename KeyType, typename ValueType>
@@ -29,6 +30,8 @@ class LRUCache : public BaseCache<KeyType, ValueType>
     node_ptr last_;         // 虚拟尾节点
     node_map map_;          // 哈希表
 
+    mutable std::shared_mutex mutex_; // 读写锁，支持多个读线程并发访问
+
   public:
     LRUCache(size_t capacity)
         : capacity_(capacity)
@@ -41,15 +44,16 @@ class LRUCache : public BaseCache<KeyType, ValueType>
 
     bool get(KeyType key, ValueType& result) override
     {
+        std::unique_lock<std::shared_mutex> lock(mutex_);
         if (map_.find(key) != map_.end())
         {
             node_ptr temp = map_[key];
             move_to_first(temp);
             result = temp->value;
-            log("[LRU get] get: ", key, " = ", result, '\n');
+            log("(LRU get) get: ", key, " = ", result, '\n');
             return true;
         }
-        log("[LRU get] get failed: ", key, '\n');
+        log("(LRU get) get failed: ", key, '\n');
         return false;
     }
 
@@ -62,15 +66,16 @@ class LRUCache : public BaseCache<KeyType, ValueType>
 
     void put(KeyType key, ValueType value) override
     {
+        std::unique_lock<std::shared_mutex> lock(mutex_);
         if (map_.find(key) != map_.end())
         {
             node_ptr node = map_[key];
             node->value   = value;
             move_to_first(node);
-            log("[LRU put] update: ", key, '=', value, '\n');
+            log("(LRU put) update: ", key, '=', value, '\n');
             return;
         }
-        log("[LRU put] new put: ", key, '=', value, '\n');
+        log("(LRU put) new put: ", key, '=', value, '\n');
 
         if (node_count_ < capacity_)
             node_count_++;
@@ -85,10 +90,12 @@ class LRUCache : public BaseCache<KeyType, ValueType>
     // 公开remove方法，供LRU-K等子类使用
     void remove_by_key(KeyType key)
     {
-        auto it = map_.find(key);
+        std::unique_lock<std::shared_mutex> lock(mutex_);
+        auto                                it = map_.find(key);
         if (it != map_.end())
         {
             remove(it->second, true);
+            node_count_--;
         }
     }
 
