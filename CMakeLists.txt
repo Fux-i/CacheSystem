@@ -9,7 +9,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 # 定义源文件
 set(SRC 
     src/main.cpp
-    src/LRU.cpp
 )
 
 # 创建可执行文件
