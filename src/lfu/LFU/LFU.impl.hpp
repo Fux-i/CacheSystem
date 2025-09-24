@@ -176,13 +176,38 @@ void LFUCache<KeyType, ValueType>::getInternal(NodePtr node, ValueType& value)
     node->freq++;
     addToFreqList(node);
 
+    // 更新总频次（访问时频次增加1）
+    cur_total_freq_++;
+    int old_average = cur_average_freq_;
+    if (node_map_.empty())
+        cur_average_freq_ = 0;
+    else
+        cur_average_freq_ = cur_total_freq_ / static_cast<int>(node_map_.size());
+
     log("[LFU getInternal] Updated frequency for key: ",
         node->key,
         " from ",
         old_freq,
         " to ",
         node->freq,
+        ", total freq: ",
+        cur_total_freq_,
+        ", average freq: ",
+        old_average,
+        " -> ",
+        cur_average_freq_,
         '\n');
+
+    // 检查是否超过最大平均频次
+    if (cur_average_freq_ > max_average_freq_)
+    {
+        log("[LFU getInternal] Average freq (",
+            cur_average_freq_,
+            ") exceeds max (",
+            max_average_freq_,
+            "), handling overflow\n");
+        handleOverMaxAverageNum();
+    }
 
     // 若现在 freq = min_freq_+1 且无 min_freq_的 node 了，更新 min_freq_
     if (node->freq == min_freq_ + 1 && freq_map_[min_freq_]->is_empty())
@@ -284,12 +309,13 @@ void LFUCache<KeyType, ValueType>::addToFreqList(NodePtr node)
 template <typename KeyType, typename ValueType>
 void LFUCache<KeyType, ValueType>::addTotalFreq()
 {
-    cur_total_freq_++;
+    // 新添加节点，频次为1
+    cur_total_freq_ += 1;
     int old_average = cur_average_freq_;
     if (node_map_.empty())
         cur_average_freq_ = 0;
     else
-        cur_average_freq_ = cur_total_freq_ / node_map_.size();
+        cur_average_freq_ = cur_total_freq_ / static_cast<int>(node_map_.size());
 
     log("[LFU addTotalFreq] Updated total freq: ",
         cur_total_freq_,
@@ -338,9 +364,13 @@ void LFUCache<KeyType, ValueType>::decreaseTotalFreq(int num)
 template <typename KeyType, typename ValueType>
 void LFUCache<KeyType, ValueType>::handleOverMaxAverageNum()
 {
+    int reduction = max_average_freq_ / 2;
     log("[LFU handleOverMaxAverageNum] Handling frequency overflow, reducing all frequencies by ",
-        max_average_freq_ / 2,
+        reduction,
         '\n');
+
+    // 重新计算总频次
+    cur_total_freq_ = 0;
 
     for (auto it = node_map_.begin(); it != node_map_.end(); ++it)
     {
@@ -359,10 +389,13 @@ void LFUCache<KeyType, ValueType>::handleOverMaxAverageNum()
 
         removeFromFreqList(node);
 
-        node->freq -= max_average_freq_ / 2;
+        node->freq -= reduction;
         node->freq = std::max(node->freq, 1);
 
         addToFreqList(node);
+
+        // 累计新的总频次
+        cur_total_freq_ += node->freq;
 
         log("[LFU handleOverMaxAverageNum] Updated key: ",
             node->key,
@@ -372,6 +405,18 @@ void LFUCache<KeyType, ValueType>::handleOverMaxAverageNum()
             node->freq,
             '\n');
     }
+
+    // 更新平均频次
+    if (node_map_.empty())
+        cur_average_freq_ = 0;
+    else
+        cur_average_freq_ = cur_total_freq_ / static_cast<int>(node_map_.size());
+
+    log("[LFU handleOverMaxAverageNum] Updated total freq: ",
+        cur_total_freq_,
+        ", average freq: ",
+        cur_average_freq_,
+        '\n');
 
     updateMinFreq();
 }
