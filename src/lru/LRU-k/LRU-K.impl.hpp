@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../utils/log.cpp"
+#include "../../utils/log.hpp"
 #include "LRU-K.decl.hpp"
 
 template <typename KeyType, typename ValueType>

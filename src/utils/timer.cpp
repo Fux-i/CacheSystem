@@ -1,4 +1,4 @@
-#include "timer.h"
+#include "timer.hpp"
 #include <iostream>
 
 Timer::Timer(std::string name) : name_(std::move(name))
