@@ -11,13 +11,20 @@ int main(int argc, char* argv[])
         DEBUG = true;
     }
 
-    LFUCache<std::string, int> cache(100, 50);
+    HashLFUCache<std::string, int> cache(50, 2, 5);
     cache.put("A", 1);
     cache.put("B", 2);
     cache.put("C", 3);
-    std::cout << cache.get("A") << std::endl;
-    std::cout << cache.get("B") << std::endl;
-    std::cout << cache.get("C") << std::endl;
+    cache.get("A");
+    cache.get("A");
+    cache.get("A");
+    cache.get("A");
+    cache.get("A");
+    cache.get("A");
+    cache.get("A");
+    cache.get("A");
+    cache.get("B");
+    cache.get("C");
 
     return 0;
 }
