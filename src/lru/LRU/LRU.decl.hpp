@@ -32,9 +32,11 @@ class LRUCache : public BaseCache<KeyType, ValueType>
     // 公开remove方法，供LRU-K等子类使用
     void removeByKey(KeyType key);
 
-  private:
-    void moveToFirst(const NodePtr& node);
+  protected:
     void removeLast();
     void remove(const NodePtr& node, bool removeMap = false);
+
+  private:
+    void moveToFirst(const NodePtr& node);
     void insertFirst(const NodePtr& node);
 };

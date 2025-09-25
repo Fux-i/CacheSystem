@@ -37,6 +37,24 @@ class LFUCache : public BaseCache<KeyType, ValueType>
      */
     void purge();
 
+  protected:
+    /**
+     * @brief 移除缓存中最不常访问的数据
+     */
+    void kickOut();
+
+    /**
+     * @brief 从频率列表中移除节点
+     * @param node 节点
+     */
+    void removeFromFreqList(NodePtr node);
+
+    /**
+     * @brief 减少平均访问等频率
+     * @param num 减少的频率
+     */
+    void decreaseTotalFreq(int num);
+
   private:
     /**
      * @brief 添加缓存
@@ -53,17 +71,6 @@ class LFUCache : public BaseCache<KeyType, ValueType>
     void getInternal(NodePtr node, ValueType& value);
 
     /**
-     * @brief 移除缓存中最不常访问的数据
-     */
-    void kickOut();
-
-    /**
-     * @brief 从频率列表中移除节点
-     * @param node 节点
-     */
-    void removeFromFreqList(NodePtr node);
-
-    /**
      * @brief 添加到频率列表
      * @param node 节点
      */
@@ -73,12 +80,6 @@ class LFUCache : public BaseCache<KeyType, ValueType>
      * @brief 增加平均访问等频率
      */
     void addTotalFreq();
-
-    /**
-     * @brief 减少平均访问等频率
-     * @param num 减少的频率
-     */
-    void decreaseTotalFreq(int num);
 
     /**
      * @brief 处理当前平均访问频率超过上限的情况
