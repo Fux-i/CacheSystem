@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../BaseCache.hpp"
+#include "../../common/BaseCache.hpp"
 #include "../FreqList.decl.hpp"
 #include <memory>
 #include <shared_mutex>

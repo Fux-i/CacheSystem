@@ -10,13 +10,13 @@ FreqList<KeyType, ValueType>::FreqList(int freq)
 }
 
 template <typename KeyType, typename ValueType>
-bool FreqList<KeyType, ValueType>::is_empty() const
+bool FreqList<KeyType, ValueType>::empty() const
 {
     return head_->next == tail_;
 }
 
 template <typename KeyType, typename ValueType>
-void FreqList<KeyType, ValueType>::add_node(typename FreqList<KeyType, ValueType>::NodePtr node)
+void FreqList<KeyType, ValueType>::addNode(typename FreqList<KeyType, ValueType>::NodePtr node)
 {
     node->next        = head_->next;
     node->prev        = head_;
@@ -25,7 +25,7 @@ void FreqList<KeyType, ValueType>::add_node(typename FreqList<KeyType, ValueType
 }
 
 template <typename KeyType, typename ValueType>
-void FreqList<KeyType, ValueType>::remove_node(typename FreqList<KeyType, ValueType>::NodePtr node)
+void FreqList<KeyType, ValueType>::removeNode(typename FreqList<KeyType, ValueType>::NodePtr node)
 {
     node->prev.lock()->next = node->next;
     node->next->prev        = node->prev;
@@ -35,8 +35,7 @@ void FreqList<KeyType, ValueType>::remove_node(typename FreqList<KeyType, ValueT
 }
 
 template <typename KeyType, typename ValueType>
-typename FreqList<KeyType, ValueType>::NodePtr
-FreqList<KeyType, ValueType>::get_earliest_node() const
+typename FreqList<KeyType, ValueType>::NodePtr FreqList<KeyType, ValueType>::getEarliestNode() const
 {
     return tail_->prev.lock();
 }

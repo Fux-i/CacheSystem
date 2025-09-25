@@ -4,12 +4,7 @@
 #include "LRU.decl.hpp"
 
 template <typename KeyType, typename ValueType>
-Node<KeyType, ValueType>::Node(KeyType key, ValueType value) : key(key), value(value)
-{
-}
-
-template <typename KeyType, typename ValueType>
-LRUCache<KeyType, ValueType>::LRUCache(size_t capacity)
+LRUCache<KeyType, ValueType>::LRUCache(int capacity)
     : capacity_(capacity), first_(std::make_shared<NodeType>()), last_(std::make_shared<NodeType>())
 {
     first_->next = last_;
@@ -22,8 +17,8 @@ bool LRUCache<KeyType, ValueType>::get(KeyType key, ValueType& result)
     std::unique_lock<std::shared_mutex> lock(mutex_);
     if (map_.find(key) != map_.end())
     {
-        node_ptr temp = map_[key];
-        move_to_first(temp);
+        NodePtr temp = map_[key];
+        moveToFirst(temp);
         result = temp->value;
         log("(LRU get) get: ", key, " = ", result, '\n');
         return true;
@@ -46,62 +41,62 @@ void LRUCache<KeyType, ValueType>::put(KeyType key, ValueType value)
     std::unique_lock<std::shared_mutex> lock(mutex_);
     if (map_.find(key) != map_.end())
     {
-        node_ptr node = map_[key];
-        node->value   = value;
-        move_to_first(node);
+        NodePtr node = map_[key];
+        node->value  = value;
+        moveToFirst(node);
         log("(LRU put) update: ", key, '=', value, '\n');
         return;
     }
     log("(LRU put) new put: ", key, '=', value, '\n');
 
-    if (node_count_ < capacity_)
-        node_count_++;
+    if (nodeCount_ < capacity_)
+        nodeCount_++;
     else
-        remove_last();
+        removeLast();
 
     auto node = std::make_shared<NodeType>(key, value);
     map_[key] = node;
-    insert_first(node);
+    insertFirst(node);
 }
 
 template <typename KeyType, typename ValueType>
-void LRUCache<KeyType, ValueType>::remove_by_key(KeyType key)
+void LRUCache<KeyType, ValueType>::removeByKey(KeyType key)
 {
     std::unique_lock<std::shared_mutex> lock(mutex_);
     auto                                it = map_.find(key);
     if (it != map_.end())
     {
         remove(it->second, true);
-        node_count_--;
+        nodeCount_--;
     }
 }
 
 template <typename KeyType, typename ValueType>
-void LRUCache<KeyType, ValueType>::move_to_first(const node_ptr& node)
+void LRUCache<KeyType, ValueType>::moveToFirst(const NodePtr& node)
 {
     remove(node);
-    insert_first(node);
+    insertFirst(node);
 }
 
 template <typename KeyType, typename ValueType>
-void LRUCache<KeyType, ValueType>::remove_last()
+void LRUCache<KeyType, ValueType>::removeLast()
 {
     remove(last_->prev.lock(), true);
 }
 
 template <typename KeyType, typename ValueType>
-void LRUCache<KeyType, ValueType>::remove(const node_ptr& node, const bool remove_map)
+void LRUCache<KeyType, ValueType>::remove(const NodePtr& node, const bool removeMap)
 {
     node->prev.lock()->next = node->next;
     node->next->prev        = node->prev.lock();
     node->next              = nullptr;
 
-    if (remove_map)
+    if (removeMap)
         map_.erase(node->key);
 }
 
 template <typename KeyType, typename ValueType>
-void LRUCache<KeyType, ValueType>::insert_first(const node_ptr& node)
+void LRUCache<KeyType, ValueType>::insertFirst(const NodePtr& node)
 {
     node->prev         = first_;
     node->next         = first_->next;

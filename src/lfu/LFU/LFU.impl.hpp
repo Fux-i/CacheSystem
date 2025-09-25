@@ -210,7 +210,7 @@ void LFUCache<KeyType, ValueType>::getInternal(NodePtr node, ValueType& value)
     }
 
     // 若现在 freq = min_freq_+1 且无 min_freq_的 node 了，更新 min_freq_
-    if (node->freq == min_freq_ + 1 && freq_map_[min_freq_]->is_empty())
+    if (node->freq == min_freq_ + 1 && freq_map_[min_freq_]->empty())
     {
         int old_min_freq = min_freq_;
         min_freq_++;
@@ -227,7 +227,7 @@ void LFUCache<KeyType, ValueType>::kickOut()
 {
     log("[LFU kickOut] Evicting least frequently used node, min_freq: ", min_freq_, '\n');
 
-    auto node = freq_map_[min_freq_]->get_earliest_node();
+    auto node = freq_map_[min_freq_]->getEarliestNode();
     if (!node)
     {
         log("[LFU kickOut] No node found to evict!\n");
@@ -272,7 +272,7 @@ void LFUCache<KeyType, ValueType>::removeFromFreqList(NodePtr node)
     // 检查频率列表是否存在
     if (freq_map_.find(freq) != freq_map_.end())
     {
-        freq_map_[freq]->remove_node(node);
+        freq_map_[freq]->removeNode(node);
     }
 
     log("[LFU removeFromFreqList] Successfully removed node with key: ",
@@ -297,7 +297,7 @@ void LFUCache<KeyType, ValueType>::addToFreqList(NodePtr node)
         freq_map_[freq] = std::make_unique<FreqList<KeyType, ValueType>>(freq);
     }
 
-    freq_map_[freq]->add_node(node);
+    freq_map_[freq]->addNode(node);
 
     log("[LFU addToFreqList] Successfully added node with key: ",
         node->key,
@@ -431,7 +431,7 @@ void LFUCache<KeyType, ValueType>::updateMinFreq()
 
     for (auto it = freq_map_.begin(); it != freq_map_.end(); ++it)
     {
-        if (!it->second->is_empty())
+        if (!it->second->empty())
         {
             min_freq_ = std::min(min_freq_, it->first);
             log("[LFU updateMinFreq] Found non-empty freq list: ", it->first, '\n');

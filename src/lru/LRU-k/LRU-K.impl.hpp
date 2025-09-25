@@ -4,10 +4,10 @@
 #include "LRU-K.decl.hpp"
 
 template <typename KeyType, typename ValueType>
-LRUKCache<KeyType, ValueType>::LRUKCache(size_t k, size_t capacity, size_t history_capacity)
+LRUKCache<KeyType, ValueType>::LRUKCache(int k, int capacity, int history_capacity)
     : LRUCache<KeyType, ValueType>(capacity)
     , k_(k)
-    , history_cache_(std::make_unique<LRUCache<KeyType, size_t>>(history_capacity))
+    , history_cache_(std::make_unique<LRUCache<KeyType, int>>(history_capacity))
 {
 }
 
@@ -27,7 +27,7 @@ bool LRUKCache<KeyType, ValueType>::get(KeyType key, ValueType& result)
         if (!inMainCache)
         {
             // 获取并更新访问历史计数
-            size_t historyCount = history_cache_->get(key); // 若无则返回默认值
+            int historyCount = history_cache_->get(key); // 若无则返回默认值
             historyCount++;
             log("[LRU-K get] update access count: ", key, " count=", historyCount, '\n');
             history_cache_->put(key, historyCount);
@@ -36,13 +36,13 @@ bool LRUKCache<KeyType, ValueType>::get(KeyType key, ValueType& result)
             if (historyCount >= k_)
             {
                 log("[LRU-K get] count reached k\n");
-                auto it = history_map_.find(key);
-                if (it != history_map_.end())
+                auto it = historyMap_.find(key);
+                if (it != historyMap_.end())
                 {
                     temp_value = it->second;
                     // 删除历史记录
-                    history_map_.erase(it);
-                    history_cache_->remove_by_key(key);
+                    historyMap_.erase(it);
+                    history_cache_->removeByKey(key);
                     should_promote = true;
                 }
             }
@@ -92,20 +92,20 @@ void LRUKCache<KeyType, ValueType>::put(KeyType key, ValueType value)
         if (!inMainCache)
         {
             // 不在主缓存，更新访问历史
-            size_t history_count = history_cache_->get(key);
+            int history_count = history_cache_->get(key);
             history_count++;
             log("[LRU-K put] update access count: ", key, " count=", history_count, '\n');
             history_cache_->put(key, history_count);
 
             // 保存值到历史记录映射，供后续 get 操作使用
-            history_map_[key] = value;
+            historyMap_[key] = value;
 
             // 检查是否达到 k 次
             if (history_count >= k_)
             {
                 // 从历史记录中移除
                 history_cache_->remove_by_key(key);
-                history_map_.erase(key);
+                historyMap_.erase(key);
                 should_promote = true;
             }
         }
