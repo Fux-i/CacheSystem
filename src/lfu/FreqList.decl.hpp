@@ -9,8 +9,8 @@ class LFUCache;
 template <typename KeyType, typename ValueType>
 class FreqList
 {
-    using Node    = cache_system::Node<KeyType, ValueType>;
-    using NodePtr = std::shared_ptr<Node>;
+    using NodeType = Node<KeyType, ValueType>;
+    using NodePtr  = std::shared_ptr<NodeType>;
 
     int     freq_;
     NodePtr head_;

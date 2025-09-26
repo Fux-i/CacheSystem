@@ -3,7 +3,7 @@
 
 template <typename KeyType, typename ValueType>
 FreqList<KeyType, ValueType>::FreqList(int freq)
-    : freq_(freq), head_(std::make_shared<Node>()), tail_(std::make_shared<Node>())
+    : freq_(freq), head_(std::make_shared<NodeType>()), tail_(std::make_shared<NodeType>())
 {
     head_->next = tail_;
     tail_->prev = head_;

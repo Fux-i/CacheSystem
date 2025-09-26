@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../common/BaseCache.hpp"
+#include "../../common/Node.hpp"
 #include "../FreqList.decl.hpp"
 #include <memory>
 #include <shared_mutex>
@@ -9,7 +10,7 @@
 template <typename KeyType, typename ValueType>
 class LFUCache : public BaseCache<KeyType, ValueType>
 {
-    using NodeType = typename FreqList<KeyType, ValueType>::Node;
+    using NodeType = Node<KeyType, ValueType>;
     using NodePtr  = std::shared_ptr<NodeType>;
     using NodeMap  = std::unordered_map<KeyType, NodePtr>;
     using FreqMap  = std::unordered_map<int, std::unique_ptr<FreqList<KeyType, ValueType>>>;

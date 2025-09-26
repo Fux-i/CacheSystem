@@ -10,7 +10,7 @@
 template <typename KeyType, typename ValueType>
 class LRUCache : public BaseCache<KeyType, ValueType>
 {
-    using NodeType = cache_system::Node<KeyType, ValueType>;
+    using NodeType = Node<KeyType, ValueType>;
     using NodePtr  = std::shared_ptr<NodeType>;
     using NodeMap  = std::unordered_map<KeyType, NodePtr>;
 
