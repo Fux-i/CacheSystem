@@ -1,26 +1,43 @@
 #pragma once
 
+#include "../../utils/log.hpp"
 #include "ArcLfuPart.decl.hpp"
 #include <memory>
 
 template <typename KeyType, typename ValueType>
-ArcLfuPart<KeyType, ValueType>::ArcLfuPart(int                                           capacity,
-                                           std::unique_ptr<LFUCache<KeyType, ValueType>> ghostList_)
-    : LFUCache<KeyType, ValueType>(capacity), ghostList_(std::move(ghostList_))
+ArcLfuPart<KeyType, ValueType>::ArcLfuPart(int capacity, int maxAverageFreq,
+                                           std::shared_ptr<LRUCache<KeyType, ValueType>> ghostList_)
+    : LFUCache<KeyType, ValueType>(capacity, maxAverageFreq), ghostList_(ghostList_)
 {
 }
 
 template <typename KeyType, typename ValueType>
-void ArcLfuPart<KeyType, ValueType>::kickOut()
+void ArcLfuPart<KeyType, ValueType>::removeLast()
 {
-    auto node = this->freq_map_[this->min_freq_]->getEarliestNode();
+    auto node = this->getLastNode();
     if (!node)
+    {
+        log("{ARC-LFU} Warning: getLastNode returned nullptr\n");
         return;
-    
-    ghostList_->put(node->key, node->value);
+    }
 
-    this->node_map_.erase(node->key);
-    this->removeFromFreqList(node);
+    try
+    {
+        auto key   = node->key;
+        auto value = node->value;
+        auto freq  = node->freq;
 
-    this->decreaseTotalFreq(node->freq);
+        log("{ARC-LFU} Evicting last node: ",
+            key,
+            " (freq: ",
+            freq,
+            ") -> moving to LFU ghost list\n");
+        ghostList_->put(key, value);
+        this->remove(node, true);
+        this->decreaseTotalFreq(freq);
+    }
+    catch (...)
+    {
+        log("{ARC-LFU} Warning: Invalid node detected, skipping eviction\n");
+    }
 }
