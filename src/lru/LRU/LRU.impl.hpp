@@ -72,6 +72,21 @@ void LRUCache<KeyType, ValueType>::removeByKey(KeyType key)
 }
 
 template <typename KeyType, typename ValueType>
+void LRUCache<KeyType, ValueType>::changeCapacity(int num)
+{
+    capacity_ += num;
+
+    // 确保容量不会变为0或负数
+    if (capacity_ < 1)
+    {
+        capacity_ = 1;
+    }
+
+    // 只有当确实有超出容量的节点时才移除
+    while (nodeCount_ > capacity_ && nodeCount_ > 0) { removeLast(); }
+}
+
+template <typename KeyType, typename ValueType>
 void LRUCache<KeyType, ValueType>::moveToFirst(const NodePtr& node)
 {
     remove(node);
@@ -81,7 +96,15 @@ void LRUCache<KeyType, ValueType>::moveToFirst(const NodePtr& node)
 template <typename KeyType, typename ValueType>
 void LRUCache<KeyType, ValueType>::removeLast()
 {
-    remove(last_->prev.lock(), true);
+    if (nodeCount_ <= 0)
+        return;
+    remove(getLastNode(), true);
+}
+
+template <typename KeyType, typename ValueType>
+typename LRUCache<KeyType, ValueType>::NodePtr LRUCache<KeyType, ValueType>::getLastNode()
+{
+    return last_->prev.lock();
 }
 
 template <typename KeyType, typename ValueType>
@@ -92,7 +115,10 @@ void LRUCache<KeyType, ValueType>::remove(const NodePtr& node, const bool remove
     node->next              = nullptr;
 
     if (removeMap)
+    {
+        nodeCount_--;
         map_.erase(node->key);
+    }
 }
 
 template <typename KeyType, typename ValueType>
