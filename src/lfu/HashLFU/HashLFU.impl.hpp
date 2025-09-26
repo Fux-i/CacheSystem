@@ -5,7 +5,7 @@
 #include <thread>
 
 template <typename KeyType, typename ValueType>
-HashLFUCache<KeyType, ValueType>::HashLFUCache(int capacity, int max_average_freq, int slice_count)
+HashLFUCache<KeyType, ValueType>::HashLFUCache(int capacity, int maxAverageFreq, int slice_count)
     : capacity_(capacity)
     , sliceCount_(slice_count > 0 ? slice_count : std::thread::hardware_concurrency())
 
@@ -14,7 +14,7 @@ HashLFUCache<KeyType, ValueType>::HashLFUCache(int capacity, int max_average_fre
     slicedCaches_.reserve(sliceCount_);
     for (int i = 0; i < sliceCount_; i++)
         slicedCaches_.emplace_back(
-            std::make_unique<LFUCache<KeyType, ValueType>>(slice_size, max_average_freq));
+            std::make_unique<LFUCache<KeyType, ValueType>>(slice_size, maxAverageFreq));
 }
 
 template <typename KeyType, typename ValueType>

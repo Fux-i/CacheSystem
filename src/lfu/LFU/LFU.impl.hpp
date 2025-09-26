@@ -5,19 +5,19 @@
 #include <cstdint>
 
 template <typename KeyType, typename ValueType>
-LFUCache<KeyType, ValueType>::LFUCache(int capacity, int max_average_freq)
+LFUCache<KeyType, ValueType>::LFUCache(int capacity, int maxAverageFreq)
     : capacity_(capacity)
-    , min_freq_(INT32_MAX)
-    , max_average_freq_(max_average_freq)
-    , cur_average_freq_(0)
-    , cur_total_freq_(0)
+    , minFreq_(INT32_MAX)
+    , maxAverageFreq_(maxAverageFreq)
+    , curAverageFreq_(0)
+    , curTotalFreq_(0)
 {
     log("[LFU Constructor] LFUCache initialized with capacity=",
         capacity_,
-        ", max_average_freq=",
-        max_average_freq_,
-        ", min_freq_=",
-        min_freq_,
+        ", maxAverageFreq=",
+        maxAverageFreq_,
+        ", minFreq_=",
+        minFreq_,
         '\n');
 }
 
@@ -126,6 +126,21 @@ void LFUCache<KeyType, ValueType>::purge()
 }
 
 template <typename KeyType, typename ValueType>
+void LFUCache<KeyType, ValueType>::changeCapacity(int num)
+{
+    capacity_ += num;
+
+    // 确保容量不会变为0或负数
+    if (capacity_ < 1)
+    {
+        capacity_ = 1;
+    }
+
+    // 只有当确实有超出容量的节点时才移除
+    while (node_map_.size() > capacity_ && !node_map_.empty()) { removeLast(); }
+}
+
+template <typename KeyType, typename ValueType>
 void LFUCache<KeyType, ValueType>::putInternal(KeyType key, ValueType value)
 {
     log("[LFU putInternal] Adding new key: ", key, ", value: ", value, '\n');
@@ -137,7 +152,7 @@ void LFUCache<KeyType, ValueType>::putInternal(KeyType key, ValueType value)
             "/",
             capacity_,
             "), need to evict\n");
-        kickOut();
+        removeLast();
     }
 
     log("[LFU putInternal] Creating new node for key: ", key, '\n');
@@ -145,7 +160,7 @@ void LFUCache<KeyType, ValueType>::putInternal(KeyType key, ValueType value)
     node_map_[key] = node;
     addTotalFreq();
     addToFreqList(node);
-    min_freq_ = std::min(min_freq_, 1);
+    minFreq_ = std::min(minFreq_, 1);
 
     log("[LFU putInternal] Successfully added key: ",
         key,
@@ -154,7 +169,7 @@ void LFUCache<KeyType, ValueType>::putInternal(KeyType key, ValueType value)
         "/",
         capacity_,
         ", min_freq: ",
-        min_freq_,
+        minFreq_,
         '\n');
 }
 
@@ -172,17 +187,17 @@ void LFUCache<KeyType, ValueType>::getInternal(NodePtr node, ValueType& value)
         value,
         '\n');
 
-    removeFromFreqList(node);
+    remove(node);
     node->freq++;
     addToFreqList(node);
 
     // 更新总频次（访问时频次增加1）
-    cur_total_freq_++;
-    int old_average = cur_average_freq_;
+    curTotalFreq_++;
+    int old_average = curAverageFreq_;
     if (node_map_.empty())
-        cur_average_freq_ = 0;
+        curAverageFreq_ = 0;
     else
-        cur_average_freq_ = cur_total_freq_ / static_cast<int>(node_map_.size());
+        curAverageFreq_ = curTotalFreq_ / static_cast<int>(node_map_.size());
 
     log("[LFU getInternal] Updated frequency for key: ",
         node->key,
@@ -191,50 +206,56 @@ void LFUCache<KeyType, ValueType>::getInternal(NodePtr node, ValueType& value)
         " to ",
         node->freq,
         ", total freq: ",
-        cur_total_freq_,
+        curTotalFreq_,
         ", average freq: ",
         old_average,
         " -> ",
-        cur_average_freq_,
+        curAverageFreq_,
         '\n');
 
     // 检查是否超过最大平均频次
-    if (cur_average_freq_ > max_average_freq_)
+    if (curAverageFreq_ > maxAverageFreq_)
     {
         log("[LFU getInternal] Average freq (",
-            cur_average_freq_,
+            curAverageFreq_,
             ") exceeds max (",
-            max_average_freq_,
+            maxAverageFreq_,
             "), handling overflow\n");
         handleOverMaxAverageNum();
     }
 
-    // 若现在 freq = min_freq_+1 且无 min_freq_的 node 了，更新 min_freq_
-    if (node->freq == min_freq_ + 1 && freq_map_[min_freq_]->empty())
+    // 若现在 freq = minFreq_+1 且无 minFreq_的 node 了，更新 minFreq_
+    if (node->freq == minFreq_ + 1 && freq_map_[minFreq_]->empty())
     {
-        int old_min_freq = min_freq_;
-        min_freq_++;
+        int old_min_freq = minFreq_;
+        minFreq_++;
         log("[LFU getInternal] Updated min_freq from ",
             old_min_freq,
             " to ",
-            min_freq_,
+            minFreq_,
             " (no nodes at old min_freq)\n");
     }
 }
 
 template <typename KeyType, typename ValueType>
-void LFUCache<KeyType, ValueType>::kickOut()
+void LFUCache<KeyType, ValueType>::removeLast()
 {
-    log("[LFU kickOut] Evicting least frequently used node, min_freq: ", min_freq_, '\n');
-
-    auto node = freq_map_[min_freq_]->getEarliestNode();
-    if (!node)
+    if (node_map_.empty())
     {
-        log("[LFU kickOut] No node found to evict!\n");
+        log("[LFU removeLast] No node to evict!\n");
         return;
     }
 
-    log("[LFU kickOut] Evicting key: ",
+    log("[LFU removeLast] Evicting least frequently used node, min_freq: ", minFreq_, '\n');
+
+    auto node = getLastNode();
+    if (!node)
+    {
+        log("[LFU removeLast] No node found to evict!\n");
+        return;
+    }
+
+    log("[LFU removeLast] Evicting key: ",
         node->key,
         ", freq: ",
         node->freq,
@@ -242,12 +263,11 @@ void LFUCache<KeyType, ValueType>::kickOut()
         node->value,
         '\n');
 
-    node_map_.erase(node->key);
-    removeFromFreqList(node);
+    remove(node, true);
 
     decreaseTotalFreq(node->freq);
 
-    log("[LFU kickOut] Successfully evicted key: ",
+    log("[LFU removeLast] Successfully evicted key: ",
         node->key,
         ", new size: ",
         node_map_.size(),
@@ -257,17 +277,19 @@ void LFUCache<KeyType, ValueType>::kickOut()
 }
 
 template <typename KeyType, typename ValueType>
-void LFUCache<KeyType, ValueType>::removeFromFreqList(NodePtr node)
+typename LFUCache<KeyType, ValueType>::NodePtr LFUCache<KeyType, ValueType>::getLastNode()
+{
+    return freq_map_[minFreq_]->getEarliestNode();
+}
+
+template <typename KeyType, typename ValueType>
+void LFUCache<KeyType, ValueType>::remove(NodePtr& node, bool removeMap)
 {
     if (!node)
         return;
 
     int freq = node->freq;
-    log("[LFU removeFromFreqList] Removing node with key: ",
-        node->key,
-        " from freq list: ",
-        freq,
-        '\n');
+    log("[LFU remove] Removing node with key: ", node->key, " from freq list: ", freq, '\n');
 
     // 检查频率列表是否存在
     if (freq_map_.find(freq) != freq_map_.end())
@@ -275,7 +297,10 @@ void LFUCache<KeyType, ValueType>::removeFromFreqList(NodePtr node)
         freq_map_[freq]->removeNode(node);
     }
 
-    log("[LFU removeFromFreqList] Successfully removed node with key: ",
+    if (removeMap)
+        node_map_.erase(node->key);
+
+    log("[LFU remove] Successfully removed node with key: ",
         node->key,
         " from freq list: ",
         freq,
@@ -310,27 +335,27 @@ template <typename KeyType, typename ValueType>
 void LFUCache<KeyType, ValueType>::addTotalFreq()
 {
     // 新添加节点，频次为1
-    cur_total_freq_ += 1;
-    int old_average = cur_average_freq_;
+    curTotalFreq_ += 1;
+    int old_average = curAverageFreq_;
     if (node_map_.empty())
-        cur_average_freq_ = 0;
+        curAverageFreq_ = 0;
     else
-        cur_average_freq_ = cur_total_freq_ / static_cast<int>(node_map_.size());
+        curAverageFreq_ = curTotalFreq_ / static_cast<int>(node_map_.size());
 
     log("[LFU addTotalFreq] Updated total freq: ",
-        cur_total_freq_,
+        curTotalFreq_,
         ", average freq: ",
         old_average,
         " -> ",
-        cur_average_freq_,
+        curAverageFreq_,
         '\n');
 
-    if (cur_average_freq_ > max_average_freq_)
+    if (curAverageFreq_ > maxAverageFreq_)
     {
         log("[LFU addTotalFreq] Average freq (",
-            cur_average_freq_,
+            curAverageFreq_,
             ") exceeds max (",
-            max_average_freq_,
+            maxAverageFreq_,
             "), handling overflow\n");
         handleOverMaxAverageNum();
     }
@@ -339,38 +364,38 @@ void LFUCache<KeyType, ValueType>::addTotalFreq()
 template <typename KeyType, typename ValueType>
 void LFUCache<KeyType, ValueType>::decreaseTotalFreq(int num)
 {
-    int old_total = cur_total_freq_;
-    cur_total_freq_ -= num;
+    int old_total = curTotalFreq_;
+    curTotalFreq_ -= num;
 
-    int old_average = cur_average_freq_;
+    int old_average = curAverageFreq_;
     if (node_map_.empty())
-        cur_average_freq_ = 0;
+        curAverageFreq_ = 0;
     else
-        cur_average_freq_ = cur_total_freq_ / node_map_.size();
+        curAverageFreq_ = curTotalFreq_ / node_map_.size();
 
     log("[LFU decreaseTotalFreq] Decreased total freq from ",
         old_total,
         " to ",
-        cur_total_freq_,
+        curTotalFreq_,
         " (subtracted ",
         num,
         "), average freq: ",
         old_average,
         " -> ",
-        cur_average_freq_,
+        curAverageFreq_,
         '\n');
 }
 
 template <typename KeyType, typename ValueType>
 void LFUCache<KeyType, ValueType>::handleOverMaxAverageNum()
 {
-    int reduction = max_average_freq_ / 2;
+    int reduction = maxAverageFreq_ / 2;
     log("[LFU handleOverMaxAverageNum] Handling frequency overflow, reducing all frequencies by ",
         reduction,
         '\n');
 
     // 重新计算总频次
-    cur_total_freq_ = 0;
+    curTotalFreq_ = 0;
 
     for (auto it = node_map_.begin(); it != node_map_.end(); ++it)
     {
@@ -387,7 +412,7 @@ void LFUCache<KeyType, ValueType>::handleOverMaxAverageNum()
             old_freq,
             '\n');
 
-        removeFromFreqList(node);
+        remove(node);
 
         node->freq -= reduction;
         node->freq = std::max(node->freq, 1);
@@ -395,7 +420,7 @@ void LFUCache<KeyType, ValueType>::handleOverMaxAverageNum()
         addToFreqList(node);
 
         // 累计新的总频次
-        cur_total_freq_ += node->freq;
+        curTotalFreq_ += node->freq;
 
         log("[LFU handleOverMaxAverageNum] Updated key: ",
             node->key,
@@ -408,14 +433,14 @@ void LFUCache<KeyType, ValueType>::handleOverMaxAverageNum()
 
     // 更新平均频次
     if (node_map_.empty())
-        cur_average_freq_ = 0;
+        curAverageFreq_ = 0;
     else
-        cur_average_freq_ = cur_total_freq_ / static_cast<int>(node_map_.size());
+        curAverageFreq_ = curTotalFreq_ / static_cast<int>(node_map_.size());
 
     log("[LFU handleOverMaxAverageNum] Updated total freq: ",
-        cur_total_freq_,
+        curTotalFreq_,
         ", average freq: ",
-        cur_average_freq_,
+        curAverageFreq_,
         '\n');
 
     updateMinFreq();
@@ -424,8 +449,8 @@ void LFUCache<KeyType, ValueType>::handleOverMaxAverageNum()
 template <typename KeyType, typename ValueType>
 void LFUCache<KeyType, ValueType>::updateMinFreq()
 {
-    int old_min_freq = min_freq_;
-    min_freq_        = INT32_MAX;
+    int old_min_freq = minFreq_;
+    minFreq_         = INT32_MAX;
 
     log("[LFU updateMinFreq] Updating min_freq, current: ", old_min_freq, '\n');
 
@@ -433,16 +458,16 @@ void LFUCache<KeyType, ValueType>::updateMinFreq()
     {
         if (!it->second->empty())
         {
-            min_freq_ = std::min(min_freq_, it->first);
+            minFreq_ = std::min(minFreq_, it->first);
             log("[LFU updateMinFreq] Found non-empty freq list: ", it->first, '\n');
         }
     }
 
-    if (min_freq_ == INT32_MAX)
+    if (minFreq_ == INT32_MAX)
     {
-        min_freq_ = 1;
+        minFreq_ = 1;
         log("[LFU updateMinFreq] No non-empty freq lists found, setting min_freq to 1\n");
     }
     else
-        log("[LFU updateMinFreq] Updated min_freq from ", old_min_freq, " to ", min_freq_, '\n');
+        log("[LFU updateMinFreq] Updated min_freq from ", old_min_freq, " to ", minFreq_, '\n');
 }

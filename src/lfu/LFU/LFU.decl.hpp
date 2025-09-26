@@ -15,11 +15,11 @@ class LFUCache : public BaseCache<KeyType, ValueType>
     using NodeMap  = std::unordered_map<KeyType, NodePtr>;
     using FreqMap  = std::unordered_map<int, std::unique_ptr<FreqList<KeyType, ValueType>>>;
 
-    int capacity_;         // 缓存容量
-    int min_freq_;         // 最小频次（用于找到最小访问频次节点）
-    int max_average_freq_; // 最大平均频次
-    int cur_average_freq_; // 当前平均频次
-    int cur_total_freq_;   // 总频次
+    int capacity_;       // 缓存容量
+    int minFreq_;        // 最小频次（用于找到最小访问频次节点）
+    int maxAverageFreq_; // 最大平均频次
+    int curAverageFreq_; // 当前平均频次
+    int curTotalFreq_;   // 总频次
 
     NodeMap node_map_; // key->node
     FreqMap freq_map_; // freq->freq_list
@@ -27,7 +27,7 @@ class LFUCache : public BaseCache<KeyType, ValueType>
     mutable std::mutex mutex_; // 互斥锁，保护node_map_和freq_map_
 
   public:
-    LFUCache(int capacity, int max_average_freq);
+    LFUCache(int capacity, int maxAverageFreq);
 
     bool      get(KeyType key, ValueType& result) override;
     ValueType get(KeyType key) override;
@@ -38,17 +38,28 @@ class LFUCache : public BaseCache<KeyType, ValueType>
      */
     void purge();
 
+    /**
+     * @brief 改变缓存容量
+     * @param num 改变的容量
+     */
+    void changeCapacity(int num);
+
   protected:
     /**
      * @brief 移除缓存中最不常访问的数据
      */
-    void kickOut();
+    virtual void removeLast();
+
+    /**
+     * @brief 获取最后一个节点
+     */
+    NodePtr getLastNode();
 
     /**
      * @brief 从频率列表中移除节点
      * @param node 节点
      */
-    void removeFromFreqList(NodePtr node);
+    void remove(NodePtr& node, bool removeMap = false);
 
     /**
      * @brief 减少平均访问等频率

@@ -13,7 +13,7 @@ class HashLFUCache : public BaseCache<KeyType, ValueType>
     std::vector<std::unique_ptr<LFUCache<KeyType, ValueType>>> slicedCaches_; // 分片缓存
 
   public:
-    HashLFUCache(int capacity, int max_average_freq, int slice_count);
+    HashLFUCache(int capacity, int maxAverageFreq, int slice_count);
 
     bool      get(KeyType key, ValueType& result) override;
     ValueType get(KeyType key) override;
