@@ -9,10 +9,9 @@ include_directories(${CMAKE_SOURCE_DIR})
 # 定义源文件
 set(SRC
     src/main.cpp
+    src/test/test.cpp
+    src/utils/timer.cpp
 )
 
 # 创建可执行文件
 add_executable(${PROJECT_NAME} ${SRC})
-
-# 如果需要链接文件系统库（C++17 filesystem）
-# target_link_libraries(${PROJECT_NAME} stdc++fs)
