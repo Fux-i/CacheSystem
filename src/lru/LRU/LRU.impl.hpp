@@ -14,6 +14,13 @@ LRUCache<KeyType, ValueType>::LRUCache(int capacity)
 template <typename KeyType, typename ValueType>
 bool LRUCache<KeyType, ValueType>::get(KeyType key, ValueType& result)
 {
+    // 防御性检查：禁止空键值的查询
+    // if (key == KeyType{})
+    // {
+    //     log("(LRU get) Warning: Rejecting empty key query\n");
+    //     return false;
+    // }
+
     std::unique_lock<std::shared_mutex> lock(mutex_);
     if (map_.find(key) != map_.end())
     {
@@ -38,6 +45,13 @@ ValueType LRUCache<KeyType, ValueType>::get(KeyType key)
 template <typename KeyType, typename ValueType>
 void LRUCache<KeyType, ValueType>::put(KeyType key, ValueType value)
 {
+    // 防御性检查：禁止空键值的插入
+    // if (key == KeyType{})
+    // {
+    //     log("(LRU put) Warning: Rejecting empty key insertion\n");
+    //     return;
+    // }
+
     std::unique_lock<std::shared_mutex> lock(mutex_);
     if (map_.find(key) != map_.end())
     {
@@ -104,7 +118,12 @@ void LRUCache<KeyType, ValueType>::removeLast()
 template <typename KeyType, typename ValueType>
 typename LRUCache<KeyType, ValueType>::NodePtr LRUCache<KeyType, ValueType>::getLastNode()
 {
-    return last_->prev.lock();
+    auto node = last_->prev.lock();
+
+    if (node && map_.find(node->key) != map_.end())
+        return node;
+
+    return nullptr;
 }
 
 template <typename KeyType, typename ValueType>

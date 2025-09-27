@@ -60,7 +60,6 @@ bool ARCCache<KeyType, ValueType>::get(KeyType key, ValueType& result)
 
         lruPart_->changeCapacity(1);
         lfuPart_->changeCapacity(-1);
-        log("{ARC get} Capacity adjustment disabled for stability\n");
         return true;
     }
 
@@ -108,7 +107,6 @@ void ARCCache<KeyType, ValueType>::put(KeyType key, ValueType value)
 
         lruPart_->changeCapacity(-1);
         lfuPart_->changeCapacity(1);
-        log("{ARC put} Capacity adjustment disabled for stability\n");
         return;
     }
 
@@ -121,7 +119,6 @@ void ARCCache<KeyType, ValueType>::put(KeyType key, ValueType value)
 
         lruPart_->changeCapacity(1);
         lfuPart_->changeCapacity(-1);
-        log("{ARC put} Capacity adjustment disabled for stability\n");
         return;
     }
 

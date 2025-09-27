@@ -38,6 +38,9 @@ class LRUCache : public BaseCache<KeyType, ValueType>
     NodePtr      getLastNode();
     void         remove(const NodePtr& node, bool removeMap = false);
 
+    // 为子类提供的安全接口
+    bool hasValidNodes() const { return nodeCount_ > 0; }
+
   private:
     void moveToFirst(const NodePtr& node);
     void insertFirst(const NodePtr& node);
