@@ -85,7 +85,7 @@ void LFUCache<KeyType, ValueType>::put(KeyType key, ValueType value)
         NodePtr node = it->second;
         if (node)
         {
-            int old_value = -1;
+            ValueType old_value{};
             getInternal(node, old_value);
             log("[LFU put] Key already exists: ",
                 key,

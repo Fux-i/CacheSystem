@@ -104,7 +104,7 @@ void LRUKCache<KeyType, ValueType>::put(KeyType key, ValueType value)
             if (history_count >= k_)
             {
                 // 从历史记录中移除
-                history_cache_->remove_by_key(key);
+                history_cache_->removeByKey(key);
                 historyMap_.erase(key);
                 should_promote = true;
             }
