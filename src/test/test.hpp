@@ -6,10 +6,8 @@
 #include <string>
 #include <vector>
 
-// 包含所有缓存策略的头文件
-#include "../arc/ARC.hpp"
+#include "../arc/arc.hpp"
 #include "../lfu/lfu.hpp"
-#include "../lru/LRU-K/LRU-K.hpp"
 #include "../lru/lru.hpp"
 #include "../utils/timer.hpp"
 

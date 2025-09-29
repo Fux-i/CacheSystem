@@ -83,15 +83,14 @@ void testHotDataAccess()
 
     // 创建六种缓存算法实例，总容量相同
     LRUCache<int, std::string>     lru(CAPACITY); // 基础LRU
-    LRUKCache<int, std::string>    lruk(2,
-                                     CAPACITY / 2,
+    LRUKCache<int, std::string>    lruk(2, CAPACITY,
                                      HOT_KEYS + COLD_KEYS); // k=2, 主缓存容量=CAPACITY
     HashLRUCache<int, std::string> hashLru(CAPACITY, 4);       // 分片LRU，4个分片
-    LFUCache<int, std::string>     lfu(CAPACITY, 1000);        // 基础LFU，maxAverageFreq=1000
+    LFUCache<int, std::string>     lfu(CAPACITY, 100);         // 基础LFU，maxAverageFreq=100
     HashLFUCache<int, std::string> hashLfu(CAPACITY,
-                                           1000,
+                                           100,
                                            4); // 分片LFU，4个分片，降低maxAverageFreq
-    ARCCache<int, std::string>     arc(CAPACITY / 4, 1000); // ARC使用完整容量
+    ARCCache<int, std::string>     arc(CAPACITY / 2, 100); // ARC使用完整容量
 
     std::random_device rd;
     std::mt19937       gen(rd());
@@ -186,14 +185,14 @@ void testLoopPattern()
     // 创建六种缓存算法实例，总容量相同
     LRUCache<int, std::string>     lru(CAPACITY); // 基础LRU
     LRUKCache<int, std::string>    lruk(2,
-                                     CAPACITY / 2,
+                                     CAPACITY,
                                      LOOP_SIZE * 2); // k=2, 历史记录容量为循环大小的两倍
     HashLRUCache<int, std::string> hashLru(CAPACITY, 4); // 分片LRU，4个分片
-    LFUCache<int, std::string>     lfu(CAPACITY, 1000);  // 基础LFU，maxAverageFreq=1000
+    LFUCache<int, std::string>     lfu(CAPACITY, 200);   // 基础LFU，maxAverageFreq=200
     HashLFUCache<int, std::string> hashLfu(CAPACITY,
-                                           1000,
+                                           200,
                                            4); // 分片LFU，4个分片，降低maxAverageFreq
-    ARCCache<int, std::string>     arc(CAPACITY / 4, 1000); // ARC使用完整容量
+    ARCCache<int, std::string>     arc(CAPACITY / 2, 200); // ARC使用完整容量
 
     std::array<BaseCache<int, std::string>*, 6> caches =
         {&lru, &lruk, &hashLru, &lfu, &hashLfu, &arc};
@@ -292,14 +291,14 @@ void testWorkloadShift()
     const int PHASE_LENGTH = OPERATIONS / 5; // 每个阶段的长度
 
     // 创建六种缓存算法实例，总容量相同
-    LRUCache<int, std::string>     lru(CAPACITY);              // 基础LRU
-    LRUKCache<int, std::string>    lruk(2, CAPACITY / 2, 500); // k=2, 历史记录容量500
-    HashLRUCache<int, std::string> hashLru(CAPACITY, 4);       // 分片LRU，4个分片
-    LFUCache<int, std::string>     lfu(CAPACITY, 1000);        // 基础LFU，maxAverageFreq=1000
+    LRUCache<int, std::string>     lru(CAPACITY);          // 基础LRU
+    LRUKCache<int, std::string>    lruk(2, CAPACITY, 500); // k=2, 历史记录容量500
+    HashLRUCache<int, std::string> hashLru(CAPACITY, 4);   // 分片LRU，4个分片
+    LFUCache<int, std::string>     lfu(CAPACITY, 300);     // 基础LFU，maxAverageFreq=300
     HashLFUCache<int, std::string> hashLfu(CAPACITY,
-                                           1000,
+                                           300,
                                            4); // 分片LFU，4个分片，降低maxAverageFreq
-    ARCCache<int, std::string>     arc(CAPACITY / 4, 1000); // ARC使用完整容量
+    ARCCache<int, std::string>     arc(CAPACITY / 2, 300); // ARC使用完整容量
 
     std::random_device                          rd;
     std::mt19937                                gen(rd());
@@ -430,17 +429,12 @@ void runAllPerformanceTests()
     std::cout << "测试包含三个场景：热点数据访问、循环扫描、工作负载变化" << std::endl;
     std::cout << std::string(120, '=') << std::endl;
 
-    auto totalStart = std::chrono::high_resolution_clock::now();
+    Timer totalTimer("综合性能测试", true);
 
     try
     {
-        // 场景1：热点数据访问测试
         testHotDataAccess();
-
-        // 场景2：循环扫描测试
         testLoopPattern();
-
-        // 场景3：工作负载剧烈变化测试
         testWorkloadShift();
     }
     catch (const std::exception& e)
@@ -449,16 +443,10 @@ void runAllPerformanceTests()
         return;
     }
 
-    auto totalEnd = std::chrono::high_resolution_clock::now();
-    auto totalDuration =
-        std::chrono::duration_cast<std::chrono::milliseconds>(totalEnd - totalStart);
+    auto totalDuration = totalTimer.getElapsedMilliseconds();
 
     std::cout << "\n" << std::string(100, '=') << std::endl;
     std::cout << "🎉 缓存系统综合性能测试完成！" << std::endl;
-    std::cout << "总耗时: " << totalDuration.count() << " 毫秒" << std::endl;
-    std::cout << "\n📊 测试总结:" << std::endl;
-    std::cout << "• 热点数据场景适合展示不同算法在访问局部性强的场景下的表现" << std::endl;
-    std::cout << "• 循环扫描场景测试算法对顺序访问模式的适应性" << std::endl;
-    std::cout << "• 工作负载变化场景考验算法的自适应能力" << std::endl;
+    std::cout << "总耗时: " << totalDuration << " 毫秒" << std::endl;
     std::cout << std::string(100, '=') << std::endl;
 }
