@@ -10,7 +10,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 set(SRC
     src/main.cpp
     src/test/test.cpp
-    src/utils/timer.cpp
+    src/test/test.hpp
 )
 
 # 创建可执行文件
